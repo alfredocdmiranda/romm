@@ -40,8 +40,13 @@ const routes = [
       },
       {
         path: "/rom/:rom/ejs",
-        name: "emulatorjs",
-        component: () => import("@/views/EmulatorJS/Base.vue"),
+        name: "retroServer",
+        component: () => import("@/views/RetroServer/Base.vue"),
+      },
+      {
+        path: "/session/:sessionId/ejs",
+        name: "sessionRetroServer",
+        component: () => import("@/views/RetroServer/Base.vue"),
       },
       {
         path: "/rom/:rom/ruffle",

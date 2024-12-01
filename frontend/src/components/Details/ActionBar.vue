@@ -89,7 +89,7 @@ async function copyDownloadLink(rom: DetailedRom) {
       class="flex-grow-1"
       @click="
         $router.push({
-          name: 'emulatorjs',
+          name: 'retroServer',
           params: { rom: rom?.id },
         })
       "

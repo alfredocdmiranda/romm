@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 import alembic.config
 import endpoints.sockets.scan  # noqa
+import endpoints.sockets.emulator  # noqa
 import uvicorn
 from config import (
     DEV_HOST,

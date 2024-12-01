@@ -47,7 +47,7 @@ const ruffleEmulationSupported = computed(() => {
         size="x-small"
         @click="
           $router.push({
-            name: 'emulatorjs',
+            name: 'retroServer',
             params: { rom: rom?.id },
           })
         "
