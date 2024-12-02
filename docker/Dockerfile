@@ -66,6 +66,20 @@ RUN git clone --recursive --branch "${RALIBRETRO_VERSION}" --depth 1 https://git
     make HAVE_CHD=1 -f ./Makefile.RAHasher
 
 
+RUN poetry install --no-ansi --no-cache --only main
+
+# Build retro server
+FROM alpine:${ALPINE_VERSION} AS retro-server-build
+
+RUN apk add  --no-cache git gcc make musl-dev mesa-gl
+RUN apk add libretro-snes9x --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing
+# RUN apk add libretro-mupen64plus --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community
+
+RUN git clone -b develop https://github.com/alfredocdmiranda/retro-server.git && \
+    cd ./retro-server && \
+    make
+
+# Build nginx modules
 FROM alpine:${ALPINE_VERSION} AS nginx-build
 
 RUN apk add --no-cache \
@@ -141,6 +155,9 @@ FROM scratch AS final-stage
 COPY --from=production-stage / /
 
 COPY --from=backend-build /src/.venv /src/.venv
+COPY --from=retro-server-build /retro-server/bin/retro_server /bin/
+COPY --from=retro-server-build /usr/lib/libretro /romm/libretro/
+
 # Fix virtualenv link to python binary
 RUN ln -sf "$(which python)" /src/.venv/bin/python
 ENV PATH="/src/.venv/bin:${PATH}"
