@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import alembic.config
+from endpoints.sockets import *
 import endpoints.sockets.scan  # noqa
 import endpoints.sockets.emulator  # noqa
 import uvicorn

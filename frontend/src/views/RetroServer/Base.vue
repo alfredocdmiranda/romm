@@ -127,7 +127,7 @@ function pause() {
 }
 
 function shutdown() {
-  socket.emit("emulation:disconnect", {
+  socket.emit("emulation:exit", {
       sessionId: sessionId.value,
       data: {}
     });
@@ -156,7 +156,7 @@ onMounted(async () => {
 });
 
 onUnmounted(async () => {
-  socket.emit("emulation:exit", {});
+  socket.emit("emulation:disconnect", {});
 });
 </script>
 

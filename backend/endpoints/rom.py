@@ -5,7 +5,8 @@ from shutil import rmtree
 from typing import Annotated
 from urllib.parse import quote
 
-from anyio import Path
+from anyio import Path, open_file
+from models.rom import Rom
 from config import (
     DEV_MODE,
     DISABLE_DOWNLOAD_ENDPOINT_AUTH,
@@ -96,6 +97,19 @@ async def add_rom(request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="There was an error uploading the file(s)",
         ) from exc
+    rom = Rom(
+        id=None,
+        file_name=filename,
+        file_name_no_tags=filename,
+        file_name_no_ext=filename.split(".")[0],
+        file_extension=filename.split(".")[-1],
+        file_path=fs_rom_handler.get_roms_fs_structure(db_platform.fs_slug),
+        platform_id=db_platform.id,
+        url_cover="",
+        url_screenshots=[],
+        file_size_bytes=0
+    )
+    db_rom_handler.add_rom(rom)
 
     return Response(status_code=status.HTTP_201_CREATED)
 

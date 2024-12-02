@@ -3,13 +3,18 @@ import socket
 import struct
 import subprocess
 import uuid
+from enum import Enum
 from logger.logger import log
 from pathlib import Path
 
-from handler.database import db_rom_handler
-
 RETRO_SERVER_BIN = "/bin/retro_server"
 LIBRETRO_PATH = "/romm/libretro"
+
+
+class EmulatorCommands(Enum):
+    AUDIO = 1
+    VIDEO = 2
+    CONFIG = 3
 
 
 class Session:
@@ -33,6 +38,7 @@ class Session:
     async def disconnect(self, sid):
         sock = self._sockets[sid]
         sock.close()
+        log.error("SOCKET CLOSED")
         del self._sockets[sid]
     
     async def send_command(self, sid, command, data):
@@ -76,23 +82,27 @@ class Session:
             else:
                 log.warning("Process DID NOT die!!!")
 
-    def get_socket(self, sid):
-        return self._sockets[sid]
-
 
 class EmulationSessionHandler:
     def __init__(self, port_range):
         self._sessions: list[Session] = []
         self._sessions_by_id: dict[str, Session] = {}
+        self._sessions_by_sid: dict[str, Session] = {}
         # TODO A user may have multiple sessions active, however only one per socket. 
         # Also, they might have sessions that are paused. Still need to work this out.
-        self._sessions_by_user: dict[str, Session] = {}
+        self._sessions_by_user: dict[int, Session] = {}
         self._used_ports = set()
         self._port_range = port_range
 
     
-    def get_session_by_id(self, id_: str):
-        return self._sessions_by_id[id_]
+    def get_session_by_id(self, id_: str) -> Session | None:
+        return self._sessions_by_id.get(id_, None)
+    
+    def get_session_by_sid(self, sid: str) -> Session | None:
+        """
+        Returns a object Session for a Socket ID.
+        """
+        return self._sessions_by_sid.get(sid, None)
 
     def get_sessions_by_user_id(self, id_: str):
         return self._sessions_by_user[int(id_)]
@@ -102,7 +112,7 @@ class EmulationSessionHandler:
             if i not in self._used_ports:
                 return i
     
-    async def create_session(self, user_id, core, filepath, port=None):
+    async def create_session(self, sid, core, filepath, port=None):
         try:
             rs_proc = None
             libretro_core = Path(LIBRETRO_PATH, core)
@@ -124,16 +134,31 @@ class EmulationSessionHandler:
             self._used_ports.add(port)
             self._sessions.append(session)
             self._sessions_by_id[session.id] = session
-            self._sessions_by_user[user_id] = session
+            self._sessions_by_sid[sid] = session
+            # self._sessions_by_user[user_id] = session
             return session.id
 
-    async def terminate_session(self, user_id):
-        session = self._sessions_by_user[user_id]
-        session.send_command(user_id, 0, None)
-
-    async def disonnect_active_session(self, user_id):
-        session = self._sessions_by_user.get(user_id)
+    async def disconnect_active_session(self, sid) -> None:
+        session = self.get_session_by_sid(sid)
         if session:
-            await session.disconnect(user_id)
+            await session.disconnect(sid)
+
+    async def join_session(self, sid: str, session_id: str):
+        session = self.get_session_by_id(session)
+        if session:
+            session.connect(sid)
+
+    async def terminate_session(self, sid: str) -> str | None:
+        session = self.get_session_by_sid(sid)
+        if session:
+            await session.send_command(sid, 0, None)
+            used_port = session.port
+            self._used_ports.remove(used_port)
+            self._sessions.remove(session)
+            del self._sessions_by_id[session.id]
+            del self._sessions_by_sid[sid]
+
+            return session.id
+
 
 emulation_session_handler = EmulationSessionHandler(range(9000, 9010))

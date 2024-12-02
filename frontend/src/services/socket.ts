@@ -4,4 +4,5 @@ export default io({
   path: "/ws/socket.io/",
   transports: ["websocket", "polling"],
   autoConnect: false,
+  withCredentials: true
 });
