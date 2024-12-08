@@ -21,17 +21,11 @@ class SocketHandler:
 
         self._socker_users_ids: dict[str, int] = {}
     
-    def add_connection(self, sid: str, user_id: int):
-        self._socker_users_ids[sid] = user_id
-        redis_client.set(f"sid:{sid}", user_id)
+    def get_sid_username(self, sid: str):
+        return redis_client.hget(f"sid:{sid}", "username")
     
-    def remove_connection(self, sid: str):
-        del self._socker_users_ids[sid]
+    def remove_sid(self, sid: str):
         redis_client.delete(f"sid:{sid}")
-    
-    def get_user_id(self, sid: str) -> int | None:
-        user_id = redis_client.get(f"sid:{sid}")
-        return int(user_id) if user_id else None
 
 
 socket_handler = SocketHandler()

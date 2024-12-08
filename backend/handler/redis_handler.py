@@ -14,7 +14,7 @@ class QueuePrio(Enum):
     LOW = "low"
 
 
-redis_client = Redis.from_url(str(REDIS_URL))
+redis_client = Redis.from_url(str(REDIS_URL), decode_responses=True)
 
 high_prio_queue = Queue(name=QueuePrio.HIGH.value, connection=redis_client)
 default_queue = Queue(name=QueuePrio.DEFAULT.value, connection=redis_client)

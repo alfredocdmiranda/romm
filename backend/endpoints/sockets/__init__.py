@@ -19,8 +19,7 @@ async def connect(sid, environ):
     access_token = cookies.get("romm_session")
     jwt_payload = jwt.decode(access_token, ROMM_AUTH_SECRET_KEY, ALGORITHM)
     username = jwt_payload.claims["sub"]
-    user = db_user_handler.get_user_by_username(username)
-    socket_handler.add_connection(sid, user.id)
+    redis_client.hmset(f"sid:{sid}", {"username": username})
 
 
 @socket_handler.socket_server.on("disconnect")
@@ -28,8 +27,6 @@ async def disconnect(sid):
     """
     It clears the sessions
     """
-    # TODO This should be moved to a more centralized place
-    # user_id = sid_user_id[sid]
     await emulation_session_handler.disconnect_active_session(sid)
-    socket_handler.remove_connection(sid)
     log.debug(f"Socket [{sid}] disconnected.")
+    socket_handler.remove_sid(sid)
